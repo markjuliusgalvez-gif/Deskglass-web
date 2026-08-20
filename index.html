@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Deskglass — Home</title>
+<title>Deskglass</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0F6E56">
@@ -19,166 +19,145 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.umd.js"></script>
-<style>
-  .landing{
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding:40px 24px;
-    text-align:center;
-    gap:18px;
-  }
-  .landing-icon{
-    width:96px;
-    height:96px;
-    object-fit:contain;
-    animation: float 3s ease-in-out infinite;
-  }
-  .landing h1{
-    font-family:'Source Serif 4',serif;
-    font-size:42px;
-    font-weight:600;
-    margin:0;
-    letter-spacing:-0.02em;
-    color:var(--text-primary);
-  }
-  .landing p{
-    font-size:14px;
-    color:var(--text-secondary);
-    margin:0;
-    max-width:420px;
-    line-height:1.6;
-  }
-  .landing-actions{
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-    justify-content:center;
-    margin-top:8px;
-  }
-  .landing-btn{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:12px 22px;
-    border-radius:8px;
-    font-family:'Inter',sans-serif;
-    font-size:14px;
-    font-weight:600;
-    cursor:pointer;
-    text-decoration:none;
-    transition: all .2s ease;
-    line-height:1;
-  }
-  .landing-btn:hover{
-    transform: translateY(-2px);
-  }
-  .landing-btn--primary{
-    background:var(--accent);
-    border:1px solid var(--accent);
-    color:#FFFFFF;
-  }
-  .landing-btn--primary:hover{
-    filter:brightness(1.1);
-  }
-  [data-theme="dark"] .landing-btn--primary{
-    color:#0B1A17;
-  }
-  .landing-btn--secondary{
-    background:var(--bg-card);
-    border:1px solid var(--border-strong);
-    color:var(--text-secondary);
-  }
-  .landing-btn--secondary:hover{
-    border-color:var(--accent);
-    color:var(--accent);
-  }
-  .landing-footer{
-    margin-top:36px;
-    padding-top:18px;
-    border-top:1px solid var(--border);
-    width:100%;
-    max-width:420px;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    font-size:12px;
-    color:var(--text-secondary);
-    line-height:1.6;
-  }
-  .landing-footer strong{
-    color:var(--text-primary);
-    font-weight:600;
-  }
-  .landing-footer a{
-    color:var(--accent);
-    text-decoration:none;
-    font-weight:500;
-  }
-  .landing-footer a:hover{
-    text-decoration:underline;
-  }
-</style>
 </head>
 <body>
-<div class="app">
-  <div class="landing">
-    <img src="icon.svg" alt="Deskglass" class="landing-icon">
-    <h1>Deskglass</h1>
-    <div class="landing-actions">
-      <a class="landing-btn landing-btn--primary" href="index.html?mode=convert">
-        <span>Convert Now</span>
-      </a>
-      <button class="landing-btn landing-btn--secondary" id="installBtnMain" title="Install Deskglass as an app">
-        <span>Install App</span>
-      </button>
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-content">
+    <img src="icon.svg" alt="Deskglass" class="loading-icon">
+    <div class="loading-title">Deskglass</div>
+    <div class="loading-subtitle">Open source document preview &amp; converter</div>
+    <div class="loading-bar">
+      <div class="loading-bar-fill" id="loadingBarFill"></div>
     </div>
   </div>
 </div>
+<div class="app">
+  <div class="masthead">
+    <div class="brand">
+      <img src="icon.svg" alt="Deskglass" class="brand-icon">
+      <h1>Deskglass</h1>
+    </div>
+    <div class="masthead-actions-center">
+      <div class="mode-tabs">
+        <button class="mode-btn active" id="previewModeBtn" title="Preview mode">Preview</button>
+        <button class="mode-btn" id="convertModeBtn" title="File converter">Convert</button>
+        <div class="mode-slider" id="modeSlider"></div>
+      </div>
+    </div>
+    <div class="masthead-actions-right">
+      <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
+        <span class="toggle-icon sun">&#9788;</span>
+        <span class="toggle-icon moon">&#9789;</span>
+      </button>
+    </div>
+  </div>
 
+  <div class="layout">
+    <div class="shelf">
+      <h2>Add a file</h2>
+      <div class="dropzone" id="dropzone">
+        <div class="icon">&#8593;</div>
+        <p>Drop a <b>.pdf</b> or <b>.docx</b> here<br>or click to browse</p>
+        <input type="file" id="fileInput" accept=".pdf,.docx" multiple>
+      </div>
+      <h2>Open files</h2>
+      <ul class="filelist" id="fileList"></ul>
+      <div class="empty-hint" id="emptyHint">Nothing open yet.</div>
+    </div>
+
+    <div class="pane" id="previewPane">
+      <div class="toolbar" id="toolbar" style="display:none;">
+        <div class="title" id="docTitle">—</div>
+        <div class="controls" id="pdfControls" style="display:none;">
+          <button id="prevPage" title="Previous page">&#8592;</button>
+          <span class="pageinfo" id="pageInfo">1 / 1</span>
+          <button id="nextPage" title="Next page">&#8594;</button>
+          <span class="divider"></span>
+          <button id="zoomOut" title="Zoom out">&#8722;</button>
+          <span class="zoominfo" id="zoomInfo">100%</span>
+          <button id="zoomIn" title="Zoom in">&#43;</button>
+        </div>
+      </div>
+      <div class="viewport" id="viewport">
+        <div class="placeholder">
+          <div class="glyph">&#128196;</div>
+          <h3>No document open</h3>
+          <p>Add a PDF or Word file on the left to preview it here. Files stay on this page — nothing is uploaded anywhere.</p>
+        </div>
+      </div>
+    </div>
+    <div class="pane converter-panel" id="converterPane" style="display:none;">
+      <div class="converter-header">
+        <h2>File Converter</h2>
+        <p>Convert your files between different formats directly in your browser.</p>
+      </div>
+      <div class="converter-body">
+        <div class="converter-card" id="pdfToWordCard">
+          <div class="converter-icon">&#128196; &#8594; &#128220;</div>
+          <h3>PDF to Word</h3>
+          <p>Extract text from PDF and save as Word document</p>
+          <div class="converter-dropzone" id="pdfToWordDropzone">
+            <div class="dropzone-text">Drop PDF here or click to select</div>
+            <input type="file" id="pdfToWordInput" accept=".pdf" multiple>
+          </div>
+          <button class="convert-btn" id="pdfToWordBtn" disabled>Convert</button>
+          <div class="converter-status" id="pdfToWordStatus"></div>
+        </div>
+        <div class="converter-card" id="wordToPdfCard">
+          <div class="converter-icon">&#128220; &#8594; &#128196;</div>
+          <h3>Word to PDF</h3>
+          <p>Convert Word documents to PDF format</p>
+          <div class="converter-dropzone" id="wordToPdfDropzone">
+            <div class="dropzone-text">Drop Word file here or click to select</div>
+            <input type="file" id="wordToPdfInput" accept=".docx" multiple>
+          </div>
+          <button class="convert-btn" id="wordToPdfBtn" disabled>Convert</button>
+          <div class="converter-status" id="wordToPdfStatus"></div>
+        </div>
+        <div class="converter-card" id="imageConverterCard">
+          <div class="converter-icon">&#127748; &#8644; &#127748;</div>
+          <h3>Image Converter</h3>
+          <p>Convert images between PNG, JPG, WEBP formats</p>
+          <div class="converter-dropzone" id="imageConverterDropzone">
+            <div class="dropzone-text">Drop image here or click to select</div>
+            <input type="file" id="imageConverterInput" accept="image/png,image/jpeg,image/webp" multiple>
+          </div>
+          <div class="image-options" id="imageOptions" style="display:none;">
+            <label>Output format:</label>
+            <select id="imageFormatSelect">
+              <option value="image/png">PNG</option>
+              <option value="image/jpeg">JPG</option>
+              <option value="image/webp">WEBP</option>
+            </select>
+          </div>
+          <button class="convert-btn" id="imageConverterBtn" disabled>Convert</button>
+          <div class="converter-status" id="imageConverterStatus"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast / Status footer -->
+  <div class="toast-container" id="toastContainer"></div>
+</div>
+
+<div class="offline-banner" id="offlineBanner">
+  <span class="offline-icon">&#9888;</span>
+  <span class="offline-text">You are currently offline. Please connect to the internet to access all features.</span>
+</div>
+
+<div class="offline-overlay" id="offlineOverlay">
+  <div class="offline-overlay-content">
+    <div class="offline-overlay-icon">&#128683;</div>
+    <h2 class="offline-overlay-title">You're offline</h2>
+    <p class="offline-overlay-text">Please connect to the internet to access all features.</p>
+    <button class="offline-overlay-btn" id="retryOnlineBtn">Retry Connection</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
 <script>
-  // Sync theme from index.html storage
-  (function(){
-    var html = document.documentElement;
-    var saved = localStorage.getItem('deskglass-theme');
-    if(saved === 'dark'){
-      html.setAttribute('data-theme', 'dark');
-    }
-  })();
-
-  // PWA install prompt
-  var deferredPrompt = null;
-  var installBtnMain = document.getElementById('installBtnMain');
-  if(installBtnMain){
-    installBtnMain.addEventListener('click', async () => {
-      if(!deferredPrompt) return;
-      deferredPrompt.prompt();
-      var { outcome } = await deferredPrompt.userChoice;
-      if(outcome === 'accepted'){
-        installBtnMain.textContent = 'Installing...';
-        installBtnMain.disabled = true;
-      }
-      deferredPrompt = null;
-      installBtnMain.style.display = 'none';
-    });
-  }
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    if(installBtnMain){
-      installBtnMain.style.display = 'inline-flex';
-    }
-  });
-  window.addEventListener('appinstalled', () => {
-    deferredPrompt = null;
-    if(installBtnMain){
-      installBtnMain.style.display = 'none';
-    }
-  });
-
-  if('serviceWorker' in navigator){
+  if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js').catch(() => {});
   }
 </script>
