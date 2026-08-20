@@ -384,35 +384,79 @@ wordToPdfBtn.addEventListener('click', async () => {
   wordToPdfBtn.textContent = 'Converting...';
   statusEl.className = 'converter-status';
   statusEl.textContent = '';
+  let container = null;
   try{
     const buf = await file.arrayBuffer();
     const result = await mammoth.convertToHtml({arrayBuffer: buf});
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>${escapeHtml(file.name)} - Print to PDF</title>
-        <style>
-          body{font-family:'Source Serif 4',Georgia,serif;font-size:15px;line-height:1.7;color:#242119;max-width:760px;margin:0 auto;padding:40px;}
-          h1,h2,h3,h4{font-family:'Source Serif 4',Georgia,serif;line-height:1.3;}
-          table{border-collapse:collapse;margin:12px 0;}
-          td,th{border:1px solid #ccc;padding:6px 10px;font-size:14px;}
-          img{max-width:100%;}
-        </style>
-      </head>
-      <body>
-        ${result.value}
-        <script>window.onload = function(){ window.print(); }<\/script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
+
+    if(typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
+      throw new Error('PDF export libraries failed to load. Check your connection and try again.');
+    }
+
+    /* Render the document HTML off-screen so it can be captured as an image */
+    container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-99999px';
+    container.style.top = '0';
+    container.style.width = '794px'; /* ~A4 width at 96dpi */
+    container.style.padding = '48px';
+    container.style.boxSizing = 'border-box';
+    container.style.background = '#ffffff';
+    container.style.fontFamily = "'Source Serif 4', Georgia, serif";
+    container.style.fontSize = '15px';
+    container.style.lineHeight = '1.7';
+    container.style.color = '#242119';
+    container.innerHTML = `
+      <style>
+        h1,h2,h3,h4{font-family:'Source Serif 4',Georgia,serif;line-height:1.3;margin:0.6em 0 0.3em;}
+        p{margin:0 0 0.8em;}
+        table{border-collapse:collapse;margin:12px 0;width:100%;}
+        td,th{border:1px solid #ccc;padding:6px 10px;font-size:14px;}
+        img{max-width:100%;}
+      </style>
+      ${result.value}
+    `;
+    document.body.appendChild(container);
+
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+
+    document.body.removeChild(container);
+    container = null;
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while(heightLeft > 0){
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save(file.name.replace(/\.docx$/i, '') + '.pdf');
+
     statusEl.className = 'converter-status success';
-    statusEl.textContent = 'Print dialog opened. Select "Save as PDF" to complete conversion.';
+    statusEl.textContent = 'Conversion complete! File downloaded.';
     wordToPdfBtn.textContent = 'Convert';
     wordToPdfBtn.disabled = false;
   }catch(err){
+    if(container && container.parentNode) container.parentNode.removeChild(container);
     statusEl.className = 'converter-status error';
     statusEl.textContent = 'Conversion failed: ' + (err.message || 'Unknown error');
     wordToPdfBtn.textContent = 'Convert';
@@ -641,22 +685,6 @@ window.addEventListener('error', function(e){
 
   // Hard fallback: always hide after 4 seconds no matter what
   setTimeout(hideLoadingScreen, 4000);
-
-  // Redirect to home page if no mode is specified
-  const params = new URLSearchParams(window.location.search);
-  if(!params.get('mode')){
-    setTimeout(() => {
-      window.location.replace('main.html');
-    }, 200);
-  }
-
-  // Check URL params for direct mode entry from main.html
-  const mode = params.get('mode');
-  if(mode === 'convert'){
-    setMode('convert');
-  } else if(mode === 'preview'){
-    setMode('preview');
-  }
 
   // Initialize mode slider position after layout
   setTimeout(updateModeSlider, 100);
