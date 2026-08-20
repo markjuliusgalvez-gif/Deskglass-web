@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deskglass — Home</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F6E56">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Deskglass">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.umd.js"></script>
+<style>
+  .landing{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:40px 24px;
+    text-align:center;
+    gap:18px;
+  }
+  .landing-icon{
+    width:96px;
+    height:96px;
+    object-fit:contain;
+    animation: float 3s ease-in-out infinite;
+  }
+  .landing h1{
+    font-family:'Source Serif 4',serif;
+    font-size:42px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.02em;
+    color:var(--text-primary);
+  }
+  .landing p{
+    font-size:14px;
+    color:var(--text-secondary);
+    margin:0;
+    max-width:420px;
+    line-height:1.6;
+  }
+  .landing-actions{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top:8px;
+  }
+  .landing-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:12px 22px;
+    border-radius:8px;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    text-decoration:none;
+    transition: all .2s ease;
+    line-height:1;
+  }
+  .landing-btn:hover{
+    transform: translateY(-2px);
+  }
+  .landing-btn--primary{
+    background:var(--accent);
+    border:1px solid var(--accent);
+    color:#FFFFFF;
+  }
+  .landing-btn--primary:hover{
+    filter:brightness(1.1);
+  }
+  [data-theme="dark"] .landing-btn--primary{
+    color:#0B1A17;
+  }
+  .landing-btn--secondary{
+    background:var(--bg-card);
+    border:1px solid var(--border-strong);
+    color:var(--text-secondary);
+  }
+  .landing-btn--secondary:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+  .landing-footer{
+    margin-top:36px;
+    padding-top:18px;
+    border-top:1px solid var(--border);
+    width:100%;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    font-size:12px;
+    color:var(--text-secondary);
+    line-height:1.6;
+  }
+  .landing-footer strong{
+    color:var(--text-primary);
+    font-weight:600;
+  }
+  .landing-footer a{
+    color:var(--accent);
+    text-decoration:none;
+    font-weight:500;
+  }
+  .landing-footer a:hover{
+    text-decoration:underline;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="landing">
+    <img src="icon.svg" alt="Deskglass" class="landing-icon">
+    <h1>Deskglass</h1>
+    <div class="landing-actions">
+      <a class="landing-btn landing-btn--primary" href="index.html?mode=convert">
+        <span>Convert Now</span>
+      </a>
+      <button class="landing-btn landing-btn--secondary" id="installBtnMain" title="Install Deskglass as an app">
+        <span>Install App</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Sync theme from index.html storage
+  (function(){
+    var html = document.documentElement;
+    var saved = localStorage.getItem('deskglass-theme');
+    if(saved === 'dark'){
+      html.setAttribute('data-theme', 'dark');
+    }
+  })();
+
+  // PWA install prompt
+  var deferredPrompt = null;
+  var installBtnMain = document.getElementById('installBtnMain');
+  if(installBtnMain){
+    installBtnMain.addEventListener('click', async () => {
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      var { outcome } = await deferredPrompt.userChoice;
+      if(outcome === 'accepted'){
+        installBtnMain.textContent = 'Installing...';
+        installBtnMain.disabled = true;
+      }
+      deferredPrompt = null;
+      installBtnMain.style.display = 'none';
+    });
+  }
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if(installBtnMain){
+      installBtnMain.style.display = 'inline-flex';
+    }
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    if(installBtnMain){
+      installBtnMain.style.display = 'none';
+    }
+  });
+
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
