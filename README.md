@@ -1,3 +1,5 @@
+>THE UI DOES NOT FIXED FOR MOBILE DEVICES BUT YOU CAN USE IT THE WEBSITE USING IOS/ANDROID DEVICES
+
 # Deskglass
 
 **Open source document preview & converter — right in your browser.**
